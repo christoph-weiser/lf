@@ -36,6 +36,61 @@ type app struct {
 	selectionOut   []string
 }
 
+func getGitStatus(dir string) map[string]string  {
+
+    gstatus := make(map[string]string)
+    folderstatus := make(map[string]string)
+
+    cmd := exec.Command("git", "-C", dir,  "status", "--porcelain")
+    stdout, _ := cmd.Output()
+
+    out := string(stdout)
+
+    if out != "" {
+
+        lines := strings.Split(out, "\n")
+
+        for _, elem := range lines {
+            
+            if elem != "" {
+                celem := strings.TrimSpace(elem)
+                slines := strings.Split(celem, " ")
+                if strings.Contains(slines[1], "/") {
+                    folderstatus[slines[1]] = strings.Replace(slines[0], "??", "?", 1)
+                    // gstatus[slines[1]] = strings.Replace(slines[0], "??", "?", 1)
+                } else {
+                    gstatus[slines[1]] = strings.Replace(slines[0], "??", "?", 1)
+                }
+            }
+        }
+    }
+
+    uniquefolders := make(map[string]string)
+    for k, v := range folderstatus {
+        sstat:= strings.Split(k, "/")
+        folder := sstat[0]
+        file := sstat[len(sstat)-1]
+        gstatus[file] = v
+
+        curr_val, inmap := uniquefolders[folder]
+        if inmap {
+            if curr_val != "?" {
+                uniquefolders[folder] = v
+            }
+        } else {
+            uniquefolders[folder] = v
+        }
+
+    }
+
+    for k,v := range uniquefolders {
+        gstatus[k] = v
+    }
+
+    return gstatus
+}
+
+
 func newApp(ui *ui, nav *nav) *app {
 	quitChan := make(chan struct{}, 1)
 
@@ -283,6 +338,8 @@ func (app *app) loop() {
 		log.Printf("getting current directory: %s", err)
 	}
 
+    gGitStatus = getGitStatus(wd)
+
 	app.nav.getDirs(wd)
 	app.nav.addJumpList()
 	app.nav.init = true
@@ -377,6 +434,8 @@ func (app *app) loop() {
 			}
 			app.ui.draw(app.nav)
 		case d := <-app.nav.dirChan:
+
+            gGitStatus = getGitStatus(app.nav.currDir().path)
 
 			app.nav.checkDir(d)
 

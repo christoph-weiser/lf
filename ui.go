@@ -290,6 +290,10 @@ func infotimefmt(t time.Time) string {
 func fileInfo(f *file, d *dir) string {
 	var info string
 
+    gitstat := gGitStatus[filepath.Base(f.path)]
+    if gitstat == "" {
+        gitstat = " "
+    }
 	for _, s := range getInfo(d.path) {
 		switch s {
 		case "size":
@@ -300,7 +304,7 @@ func fileInfo(f *file, d *dir) string {
 				} else {
 					sz = humanize(f.TotalSize())
 				}
-				info = fmt.Sprintf("%s %4s", info, sz)
+				info = fmt.Sprintf("%s %4s %s", info, sz, gitstat)
 				continue
 			}
 
@@ -310,9 +314,9 @@ func fileInfo(f *file, d *dir) string {
 			case f.dirCount < 0:
 				info = fmt.Sprintf("%s    ?", info)
 			case f.dirCount < 1000:
-				info = fmt.Sprintf("%s %4d", info, f.dirCount)
+				info = fmt.Sprintf("%s %4d %s", info, f.dirCount, gitstat)
 			default:
-				info = fmt.Sprintf("%s 999+", info)
+				info = fmt.Sprintf("%s 999+ %s", info)
 			}
 		case "time":
 			info = fmt.Sprintf("%s %*s", info, max(len(gOpts.infotimefmtnew), len(gOpts.infotimefmtold)), infotimefmt(f.ModTime()))

@@ -38,6 +38,8 @@ var (
 	gVersion        string
 )
 
+var gGitStatus = make(map[string]string)
+
 func (a *arrayFlag) Set(v string) error {
 	*a = append(*a, v)
 	return nil
